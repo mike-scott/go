@@ -85,6 +85,8 @@ func Set(GOARCH string) *Arch {
 		a := archPPC64()
 		a.LinkArch = &ppc64.Linkppc64le
 		return a
+	case "riscv64":
+		return archRiscv64()
 	case "s390x":
 		a := archS390x()
 		a.LinkArch = &s390x.Links390x
@@ -530,6 +532,20 @@ func archMips64() *Arch {
 		RegisterPrefix: registerPrefix,
 		RegisterNumber: mipsRegisterNumber,
 		IsJump:         jumpMIPS,
+	}
+}
+
+func archRiscv64() *Arch {
+	instructions := make(map[string]obj.As)
+	register := make(map[string]int16)
+
+	return &Arch{
+		LinkArch:       &obj.LinkArch{},
+		Instructions:   instructions,
+		Register:       register,
+		RegisterPrefix: nil,
+		RegisterNumber: nilRegisterNumber,
+		IsJump:         func(string) bool { return false },
 	}
 }
 
