@@ -11,6 +11,7 @@ import (
 	"cmd/internal/obj/arm64"
 	"cmd/internal/obj/mips"
 	"cmd/internal/obj/ppc64"
+	"cmd/internal/obj/riscv64"
 	"cmd/internal/obj/s390x"
 	"cmd/internal/obj/wasm"
 	"cmd/internal/obj/x86"
@@ -536,13 +537,10 @@ func archMips64() *Arch {
 }
 
 func archRiscv64() *Arch {
-	instructions := make(map[string]obj.As)
-	register := make(map[string]int16)
-
 	return &Arch{
-		LinkArch:       &obj.LinkArch{},
-		Instructions:   instructions,
-		Register:       register,
+		LinkArch:       &riscv64.Linkriscv64,
+		Instructions:   riscv64.Instructions,
+		Register:       riscv64.Registers,
 		RegisterPrefix: nil,
 		RegisterNumber: nilRegisterNumber,
 		IsJump:         func(string) bool { return false },

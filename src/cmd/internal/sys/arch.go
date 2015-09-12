@@ -20,6 +20,7 @@ const (
 	MIPS
 	MIPS64
 	PPC64
+	RISCV64
 	S390X
 	Wasm
 )
@@ -146,6 +147,15 @@ var ArchPPC64 = &Arch{
 var ArchPPC64LE = &Arch{
 	Name:      "ppc64le",
 	Family:    PPC64,
+	ByteOrder: binary.LittleEndian,
+	PtrSize:   8,
+	RegSize:   8,
+	MinLC:     4,
+}
+
+var ArchRISCV64 = &Arch{
+	Name:      "riscv64",
+	Family:    RISCV64,
 	ByteOrder: binary.LittleEndian,
 	PtrSize:   8,
 	RegSize:   8,
