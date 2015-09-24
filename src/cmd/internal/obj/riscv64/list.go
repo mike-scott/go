@@ -28,8 +28,9 @@
 package riscv64
 
 import (
-	"cmd/internal/obj"
 	"fmt"
+
+	"cmd/internal/obj"
 )
 
 var (

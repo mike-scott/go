@@ -21,21 +21,40 @@
 package riscv64
 
 import (
+	"log"
+
 	"cmd/internal/obj"
 )
 
-// TODO(myenik)
-func preprocess(ctxt *obj.Link, cursym *obj.LSym, newprog obj.ProgAlloc) {
-}
-
+// progedit is called individually for each Prog.
 // TODO(myenik)
 func progedit(ctxt *obj.Link, p *obj.Prog, newprog obj.ProgAlloc) {
-}
-
-// TODO(myenik)
-func assemble(ctxt *obj.Link, cursym *obj.LSym, newprog obj.ProgAlloc) {
+	log.Printf("progedit: ctxt: %+v p: %#v p: %s", ctxt, p, p)
 }
 
 // TODO(myenik)
 func follow(ctxt *obj.Link, s *obj.LSym) {
+	log.Printf("follow: ctxt: %+v", ctxt)
+
+	for p := s.Func.Text; p != nil; p = p.Link {
+		log.Printf("s: %+v", s)
+	}
+}
+
+// TODO(myenik)
+func preprocess(ctxt *obj.Link, cursym *obj.LSym, newprog obj.ProgAlloc) {
+	log.Printf("preprocess: ctxt: %+v", ctxt)
+
+	for p := cursym.Func.Text; p != nil; p = p.Link {
+		log.Printf("cursym: %+v", cursym)
+	}
+}
+
+// TODO(myenik)
+func assemble(ctxt *obj.Link, cursym *obj.LSym, newprog obj.ProgAlloc) {
+	log.Printf("assemble: ctxt: %+v", ctxt)
+
+	for p := cursym.Func.Text; p != nil; p = p.Link {
+		log.Printf("cursym: %+v", cursym)
+	}
 }
