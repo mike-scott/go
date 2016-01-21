@@ -64,12 +64,65 @@ func follow(ctxt *obj.Link, s *obj.LSym) {
 	}
 }
 
-// TODO(myenik)
+// preprocess is responsible for:
+// * Updating the SP on function entry and exit
+// * Rewriting RET to a real return instruction
 func preprocess(ctxt *obj.Link, cursym *obj.LSym, newprog obj.ProgAlloc) {
 	log.Printf("preprocess: ctxt: %+v", ctxt)
 
+	ctxt.Cursym = cursym
+
+	if cursym.Func.Text == nil || cursym.Func.Text.Link == nil {
+		return
+	}
+
+	stackSize := cursym.Func.Text.To.Offset
+
+	// TODO(prattmic): explain what these are really for,
+	// once I figure it out.
+	cursym.Args = cursym.Func.Text.To.Val.(int32)
+	cursym.Locals = int32(stackSize)
+
+	var q *obj.Prog
 	for p := cursym.Func.Text; p != nil; p = p.Link {
-		log.Printf("cursym: %+v", cursym)
+		log.Printf("p: %+v", p)
+
+		switch p.As {
+		case obj.ATEXT:
+			// Function entry. Setup stack.
+			// TODO(prattmic): handle calls to morestack.
+			q = p
+			q = obj.Appendp(ctxt, q)
+			q.As = AADDI
+			q.From.Type = obj.TYPE_REG
+			q.From.Reg = REG_SP
+			q.From3 = &obj.Addr{}
+			q.From3.Type = obj.TYPE_CONST
+			q.From3.Offset = -stackSize
+			q.To.Type = obj.TYPE_REG
+			q.To.Reg = REG_SP
+			q.Spadj = int32(-stackSize)
+		case obj.ARET:
+			// Function exit. Stack teardown and exit.
+			q = p
+			q = obj.Appendp(ctxt, q)
+			q.As = AADDI
+			q.From.Type = obj.TYPE_REG
+			q.From.Reg = REG_SP
+			q.From3 = &obj.Addr{}
+			q.From3.Type = obj.TYPE_CONST
+			q.From3.Offset = stackSize
+			q.To.Type = obj.TYPE_REG
+			q.To.Reg = REG_SP
+			q.Spadj = int32(stackSize)
+
+			q = obj.Appendp(ctxt, q)
+			q.As = AJAL
+			q.From.Type = obj.TYPE_REG
+			q.From.Reg = REG_RA
+			q.To.Type = obj.TYPE_REG
+			q.To.Reg = REG_ZERO
+		}
 	}
 }
 
