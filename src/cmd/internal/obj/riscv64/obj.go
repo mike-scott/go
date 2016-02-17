@@ -30,4 +30,5 @@ var Linkriscv64 = obj.LinkArch{
 	Preprocess: preprocess,
 	Assemble:   assemble,
 	Progedit:   progedit,
+	UnaryDst:   unaryDst,
 }
