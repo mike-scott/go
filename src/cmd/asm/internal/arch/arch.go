@@ -536,6 +536,19 @@ func archMips64() *Arch {
 	}
 }
 
+var riscv64Jumps = map[string]bool{
+	"BEQ":  true,
+	"BNE":  true,
+	"BLT":  true,
+	"BGE":  true,
+	"BLTU": true,
+	"BGEU": true,
+	"CALL": true,
+	"JAL":  true,
+	"JALR": true,
+	"JMP":  true,
+}
+
 func archRiscv64() *Arch {
 	return &Arch{
 		LinkArch:       &riscv64.Linkriscv64,
@@ -543,7 +556,9 @@ func archRiscv64() *Arch {
 		Register:       riscv64.Registers,
 		RegisterPrefix: nil,
 		RegisterNumber: nilRegisterNumber,
-		IsJump:         func(string) bool { return false },
+		IsJump: func(s string) bool {
+			return riscv64Jumps[s]
+		},
 	}
 }
 
