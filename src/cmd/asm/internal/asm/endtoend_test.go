@@ -441,6 +441,10 @@ func TestPPC64Encoder(t *testing.T) {
 	testEndToEnd(t, "ppc64", "ppc64enc")
 }
 
+func TestRISCV64Encoder(t *testing.T) {
+	testEndToEnd(t, "riscv64", "riscv64enc")
+}
+
 func TestS390XEndToEnd(t *testing.T) {
 	testEndToEnd(t, "s390x", "s390x")
 }
