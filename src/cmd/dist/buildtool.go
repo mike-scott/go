@@ -44,6 +44,7 @@ var bootstrapDirs = []string{
 	"cmd/compile/internal/mips",
 	"cmd/compile/internal/mips64",
 	"cmd/compile/internal/ppc64",
+	"cmd/compile/internal/riscv64",
 	"cmd/compile/internal/types",
 	"cmd/compile/internal/s390x",
 	"cmd/compile/internal/ssa",
