@@ -8,6 +8,7 @@ import (
 	"cmd/internal/obj/arm64"
 	"cmd/internal/obj/mips"
 	"cmd/internal/obj/ppc64"
+	"cmd/internal/obj/riscv64"
 	"cmd/internal/obj/s390x"
 	"cmd/internal/obj/wasm"
 	"cmd/internal/obj/x86"
@@ -102,6 +103,13 @@ const (
 	BlockPPC64FLE
 	BlockPPC64FGT
 	BlockPPC64FGE
+
+	BlockRISCV64EQ
+	BlockRISCV64NE
+	BlockRISCV64LT
+	BlockRISCV64GE
+	BlockRISCV64LTU
+	BlockRISCV64GEU
 
 	BlockS390XEQ
 	BlockS390XNE
@@ -210,6 +218,13 @@ var blockString = [...]string{
 	BlockPPC64FLE: "FLE",
 	BlockPPC64FGT: "FGT",
 	BlockPPC64FGE: "FGE",
+
+	BlockRISCV64EQ:  "EQ",
+	BlockRISCV64NE:  "NE",
+	BlockRISCV64LT:  "LT",
+	BlockRISCV64GE:  "GE",
+	BlockRISCV64LTU: "LTU",
+	BlockRISCV64GEU: "GEU",
 
 	BlockS390XEQ:  "EQ",
 	BlockS390XNE:  "NE",
@@ -1658,6 +1673,8 @@ const (
 	OpPPC64FlagEQ
 	OpPPC64FlagLT
 	OpPPC64FlagGT
+
+	OpRISCV64ADD
 
 	OpS390XFADDS
 	OpS390XFADD
@@ -21880,6 +21897,22 @@ var opcodeTable = [...]opInfo{
 		name:   "FlagGT",
 		argLen: 0,
 		reg:    regInfo{},
+	},
+
+	{
+		name:         "ADD",
+		argLen:       2,
+		commutative:  true,
+		resultInArg0: true,
+		asm:          riscv64.AADD,
+		reg: regInfo{
+			inputs: []inputInfo{
+				{0, 4294967295}, // .ZERO .RA .SP .GP .TP .T0 .T1 .T2 .S0 .SB .A0 .A1 .A2 .A3 .A4 .A5 .A6 .A7 .RT1 .RT2 .CTXT .G .S6 .S7 .S8 .S9 .S10 .S11 .T3 .T4 .T5 .T6
+			},
+			outputs: []outputInfo{
+				{0, 4294967295}, // .ZERO .RA .SP .GP .TP .T0 .T1 .T2 .S0 .SB .A0 .A1 .A2 .A3 .A4 .A5 .A6 .A7 .RT1 .RT2 .CTXT .G .S6 .S7 .S8 .S9 .S10 .S11 .T3 .T4 .T5 .T6
+			},
+		},
 	},
 
 	{

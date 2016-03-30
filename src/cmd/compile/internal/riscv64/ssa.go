@@ -9,6 +9,7 @@ import (
 
 	"cmd/compile/internal/gc"
 	"cmd/compile/internal/ssa"
+	"cmd/internal/obj"
 )
 
 // ssaRegToReg maps ssa register numbers to obj register numbers.
@@ -20,7 +21,20 @@ func ssaMarkMoves(s *gc.SSAGenState, b *ssa.Block) {
 }
 
 func ssaGenValue(s *gc.SSAGenState, v *ssa.Value) {
-	log.Printf("ssaGenValues")
+	log.Printf("ssaGenValue")
+
+	switch v.Op {
+	case ssa.OpRISCV64ADD:
+		r := v.Reg()
+		r1 := v.Args[0].Reg()
+		r2 := v.Args[1].Reg()
+		p := s.Prog(v.Op.Asm())
+		p.From.Type = obj.TYPE_REG
+		p.From.Reg = r1
+		p.SetFrom3(obj.Addr{Type: obj.TYPE_REG, Reg: r2})
+		p.To.Type = obj.TYPE_REG
+		p.To.Reg = r
+	}
 }
 
 func ssaGenBlock(s *gc.SSAGenState, b, next *ssa.Block) {
