@@ -47,16 +47,15 @@ import (
 func progedit(ctxt *obj.Link, p *obj.Prog, newprog obj.ProgAlloc) {
 	// Ensure everything has a From3 to eliminate a ton of nil-pointer
 	// checks later.
-	if p.From3 == nil {
-		p.From3 = &obj.Addr{Type: obj.TYPE_NONE}
+	if p.GetFrom3() == nil {
+		p.SetFrom3(obj.Addr{Type: obj.TYPE_NONE})
 	}
 
 	// Expand binary instructions to ternary ones.
-	if p.From3.Type == obj.TYPE_NONE {
+	if p.From3Type() == obj.TYPE_NONE {
 		switch p.As {
 		case AADD, ASUB, ASLL, AXOR, ASRL, ASRA, AOR, AAND:
-			p.From3.Type = obj.TYPE_REG
-			p.From3.Reg = p.To.Reg
+			p.SetFrom3(obj.Addr{Type: obj.TYPE_REG, Reg: p.To.Reg})
 		}
 	}
 
@@ -100,8 +99,7 @@ func progedit(ctxt *obj.Link, p *obj.Prog, newprog obj.ProgAlloc) {
 		// immediate area of the encoded instruction, so record it in
 		// the Offset field.
 		p.From.Offset = i.csr
-		p.From3.Type = obj.TYPE_REG
-		p.From3.Reg = REG_ZERO
+		p.SetFrom3(obj.Addr{Type: obj.TYPE_REG, Reg: REG_ZERO})
 		if p.To.Type == obj.TYPE_NONE {
 			p.To.Type = obj.TYPE_REG
 			p.To.Reg = REG_ZERO
@@ -112,13 +110,12 @@ func progedit(ctxt *obj.Link, p *obj.Prog, newprog obj.ProgAlloc) {
 		switch p.From.Type {
 		case obj.TYPE_REG: // MOV Ra, Rb -> ADDI $0, Ra, Rb
 			p.As = AADDI
-			*p.From3 = p.From
+			p.SetFrom3(p.From)
 			p.From.Type = obj.TYPE_CONST
 			p.From.Offset = 0
 		case obj.TYPE_CONST: // MOV $c, R -> ADD $c, ZERO, R
 			p.As = AADDI
-			p.From3.Type = obj.TYPE_REG
-			p.From3.Reg = REG_ZERO
+			p.SetFrom3(obj.Addr{Type: obj.TYPE_REG, Reg: REG_ZERO})
 		}
 	}
 }
@@ -172,11 +169,11 @@ func preprocess(ctxt *obj.Link, cursym *obj.LSym, newprog obj.ProgAlloc) {
 	stacksize := text.To.Offset
 	// Insert stack adjustment.  Do not overwrite the TEXT directive itself;
 	// other parts of the assembler assume it's there.
-	spadj := obj.Appendp(ctxt, text)
+	spadj := obj.Appendp(text, newprog)
 	spadj.As = AADDI
 	spadj.From.Type = obj.TYPE_CONST
 	spadj.From.Offset = -stacksize
-	spadj.From3 = &obj.Addr{Type: obj.TYPE_REG, Reg: REG_SP}
+	spadj.SetFrom3(obj.Addr{Type: obj.TYPE_REG, Reg: REG_SP})
 	spadj.To.Type = obj.TYPE_REG
 	spadj.To.Reg = REG_SP
 	spadj.Spadj = int32(-stacksize)
@@ -199,7 +196,7 @@ func preprocess(ctxt *obj.Link, cursym *obj.LSym, newprog obj.ProgAlloc) {
 			offset := p.Pcond.Pc - p.Pc
 			if offset < -4096 || 4096 <= offset {
 				// Branch is long.  Replace it with a jump.
-				jmp := obj.Appendp(ctxt, p)
+				jmp := obj.Appendp(p, newprog)
 				jmp.As = AJAL
 				jmp.From = obj.Addr{Type: obj.TYPE_REG, Reg: REG_ZERO}
 				jmp.To = obj.Addr{Type: obj.TYPE_BRANCH}
@@ -266,7 +263,7 @@ func immi(a obj.Addr, nbits uint) uint32 {
 
 func instr_r(p *obj.Prog) uint32 {
 	rs2 := regi(p.From)
-	rs1 := regi(*p.From3)
+	rs1 := regi(*p.GetFrom3())
 	rd := regi(p.To)
 	i, ok := encode(p.As)
 	if !ok {
@@ -277,7 +274,7 @@ func instr_r(p *obj.Prog) uint32 {
 
 func instr_i(p *obj.Prog) uint32 {
 	imm := immi(p.From, 12)
-	rs1 := regi(*p.From3)
+	rs1 := regi(*p.GetFrom3())
 	rd := regi(p.To)
 	i, ok := encode(p.As)
 	if !ok {
@@ -344,7 +341,7 @@ func assemble(ctxt *obj.Link, cursym *obj.LSym, newprog obj.ProgAlloc) {
 	}
 	cursym.Size = int64(4 * len(symcode))
 
-	obj.Symgrow(ctxt, cursym, cursym.Size)
+	cursym.Grow(cursym.Size)
 	for p, i := cursym.P, 0; i < len(symcode); p, i = p[4:], i+1 {
 		ctxt.Arch.ByteOrder.PutUint32(p, symcode[i])
 	}

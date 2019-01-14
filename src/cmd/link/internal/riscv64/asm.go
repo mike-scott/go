@@ -28,7 +28,7 @@
 package riscv64
 
 import (
-	"cmd/internal/obj"
+	"cmd/internal/objabi"
 	"cmd/internal/sys"
 	"cmd/link/internal/ld"
 	"cmd/link/internal/sym"
@@ -41,17 +41,17 @@ func gentext(ctxt *ld.Link) {
 
 func adddynrela(ctxt *ld.Link, rel *sym.Symbol, s *sym.Symbol, r *sym.Reloc) bool {
 	log.Fatalf("adddynrela not implemented")
-	return false;
+	return false
 }
 
 func adddynrel(ctxt *ld.Link, s *sym.Symbol, r *sym.Reloc) bool {
 	log.Fatalf("adddynrel not implemented")
-	return false;
+	return false
 }
 
 func elfreloc1(ctxt *ld.Link, r *sym.Reloc, sectoff int64) bool {
 	log.Printf("elfreloc1")
-	return false;
+	return false
 }
 
 func elfsetupplt(ctxt *ld.Link) {
@@ -77,108 +77,123 @@ func archrelocvariant(ctxt *ld.Link, r *sym.Reloc, s *sym.Symbol, t int64) int64
 // TODO(mpratt): Refactor asmb for other archs. This worked literally copied
 // and pasted from mips64.
 func asmb(ctxt *ld.Link) {
-	if ld.Debug['v'] != 0 {
-		fmt.Fprintf(&ld.Bso, "%5.2f asmb\n", obj.Cputime())
+	if ctxt.Debugvlog != 0 {
+		ctxt.Logf("%5.2f asmb\n", ld.Cputime())
 	}
-	ld.Bso.Flush()
 
-	if ld.Iself {
+	if ctxt.IsELF {
 		ld.Asmbelfsetup()
 	}
 
-	sect := ld.Segtext.Sect
-	ld.Cseek(int64(sect.Vaddr - ld.Segtext.Vaddr + ld.Segtext.Fileoff))
-	ld.Codeblk(int64(sect.Vaddr), int64(sect.Length))
-	for sect = sect.Next; sect != nil; sect = sect.Next {
-		ld.Cseek(int64(sect.Vaddr - ld.Segtext.Vaddr + ld.Segtext.Fileoff))
-		ld.Datblk(int64(sect.Vaddr), int64(sect.Length))
+	sect := ld.Segtext.Sections[0]
+	ctxt.Out.SeekSet(int64(sect.Vaddr - ld.Segtext.Vaddr + ld.Segtext.Fileoff))
+	ld.Codeblk(ctxt, int64(sect.Vaddr), int64(sect.Length))
+	for _, sect = range ld.Segtext.Sections[1:] {
+		ctxt.Out.SeekSet(int64(sect.Vaddr - ld.Segtext.Vaddr + ld.Segtext.Fileoff))
+		ld.Datblk(ctxt, int64(sect.Vaddr), int64(sect.Length))
 	}
 
 	if ld.Segrodata.Filelen > 0 {
-		if ld.Debug['v'] != 0 {
-			fmt.Fprintf(&ld.Bso, "%5.2f rodatblk\n", obj.Cputime())
+		if ctxt.Debugvlog != 0 {
+			ctxt.Logf("%5.2f rodatblk\n", ld.Cputime())
 		}
-		ld.Bso.Flush()
-
-		ld.Cseek(int64(ld.Segrodata.Fileoff))
-		ld.Datblk(int64(ld.Segrodata.Vaddr), int64(ld.Segrodata.Filelen))
+		ctxt.Out.SeekSet(int64(ld.Segrodata.Fileoff))
+		ld.Datblk(ctxt, int64(ld.Segrodata.Vaddr), int64(ld.Segrodata.Filelen))
+	}
+	if ld.Segrelrodata.Filelen > 0 {
+		if ctxt.Debugvlog != 0 {
+			ctxt.Logf("%5.2f relrodatblk\n", ld.Cputime())
+		}
+		ctxt.Out.SeekSet(int64(ld.Segrelrodata.Fileoff))
+		ld.Datblk(ctxt, int64(ld.Segrelrodata.Vaddr), int64(ld.Segrelrodata.Filelen))
 	}
 
-	if ld.Debug['v'] != 0 {
-		fmt.Fprintf(&ld.Bso, "%5.2f datblk\n", obj.Cputime())
+	if ctxt.Debugvlog != 0 {
+		ctxt.Logf("%5.2f datblk\n", ld.Cputime())
 	}
-	ld.Bso.Flush()
 
-	ld.Cseek(int64(ld.Segdata.Fileoff))
-	ld.Datblk(int64(ld.Segdata.Vaddr), int64(ld.Segdata.Filelen))
+	ctxt.Out.SeekSet(int64(ld.Segdata.Fileoff))
+	ld.Datblk(ctxt, int64(ld.Segdata.Vaddr), int64(ld.Segdata.Filelen))
+
+	ctxt.Out.SeekSet(int64(ld.Segdwarf.Fileoff))
+	ld.Dwarfblk(ctxt, int64(ld.Segdwarf.Vaddr), int64(ld.Segdwarf.Filelen))
 
 	/* output symbol table */
 	ld.Symsize = 0
 
 	ld.Lcsize = 0
 	symo := uint32(0)
-	if ld.Debug['s'] == 0 {
-		if ld.Debug['v'] != 0 {
-			fmt.Fprintf(&ld.Bso, "%5.2f sym\n", obj.Cputime())
+	if !*ld.FlagS  {
+		if ctxt.Debugvlog != 0 {
+			ctxt.Logf("%5.2f sym\n", ld.Cputime())
 		}
-		ld.Bso.Flush()
-		switch ld.HEADTYPE {
+		switch ctxt.HeadType {
 		default:
-			if ld.Iself {
-				symo = uint32(ld.Segdata.Fileoff + ld.Segdata.Filelen)
-				symo = uint32(ld.Rnd(int64(symo), int64(ld.INITRND)))
+			if ctxt.IsELF {
+				symo = uint32(ld.Segdwarf.Fileoff + ld.Segdwarf.Filelen)
+				symo = uint32(ld.Rnd(int64(symo), int64(*ld.FlagRound)))
 			}
 
-		case obj.Hplan9:
-			log.Fatalf("Plan 9 unsupported")
+		case objabi.Hplan9:
+			symo = uint32(ld.Segdata.Fileoff + ld.Segdata.Filelen)
 		}
 
-		ld.Cseek(int64(symo))
-		switch ld.HEADTYPE {
+		ctxt.Out.SeekSet(int64(symo))
+		switch ctxt.HeadType {
 		default:
-			if ld.Iself {
-				if ld.Debug['v'] != 0 {
-					fmt.Fprintf(&ld.Bso, "%5.2f elfsym\n", obj.Cputime())
+			if ctxt.IsELF {
+				if ctxt.Debugvlog != 0 {
+					ctxt.Logf("%5.2f elfsym\n", ld.Cputime())
 				}
-				ld.Asmelfsym()
-				ld.Cflush()
-				ld.Cwrite(ld.Elfstrdat)
+				ld.Asmelfsym(ctxt)
+				ctxt.Out.Flush()
+				ctxt.Out.Write(ld.Elfstrdat)
 
-				if ld.Debug['v'] != 0 {
-					fmt.Fprintf(&ld.Bso, "%5.2f dwarf\n", obj.Cputime())
-				}
-				ld.Dwarfemitdebugsections()
-
-				if ld.Linkmode == ld.LinkExternal {
-					ld.Elfemitreloc()
+				if ctxt.LinkMode == ld.LinkExternal {
+					ld.Elfemitreloc(ctxt)
 				}
 			}
 
-		case obj.Hplan9:
-			log.Fatalf("Plan 9 unsupported")
+		case objabi.Hplan9:
+			ld.Asmplan9sym(ctxt)
+			ctxt.Out.Flush()
+
+			sym := ctxt.Syms.Lookup("pclntab", 0)
+			if sym != nil {
+				ld.Lcsize = int32(len(sym.P))
+				ctxt.Out.Write(sym.P)
+				ctxt.Out.Flush()
+			}
 		}
 	}
 
-	ld.Ctxt.Cursym = nil
-	if ld.Debug['v'] != 0 {
-		fmt.Fprintf(&ld.Bso, "%5.2f header\n", obj.Cputime())
+	if ctxt.Debugvlog != 0 {
+		ctxt.Logf("%5.2f header\n", ld.Cputime())
 	}
-	ld.Bso.Flush()
-	ld.Cseek(0)
-	switch ld.HEADTYPE {
+	ctxt.Out.SeekSet(0)
+	switch ctxt.HeadType {
 	default:
-		log.Fatalf("Unsupported OS: %v", ld.HEADTYPE)
+	case objabi.Hplan9: /* plan 9 */
+		// TODO (mscott) determine correct magic for RISCV64
+		ctxt.Out.Write32(0x647)                      /* magic */
+		ctxt.Out.Write32(uint32(ld.Segtext.Filelen)) /* sizes */
+		ctxt.Out.Write32(uint32(ld.Segdata.Filelen))
+		ctxt.Out.Write32(uint32(ld.Segdata.Length - ld.Segdata.Filelen))
+		ctxt.Out.Write32(uint32(ld.Symsize))          /* nsyms */
+		ctxt.Out.Write32(uint32(ld.Entryvalue(ctxt))) /* va of entry */
+		ctxt.Out.Write32(0)
+		ctxt.Out.Write32(uint32(ld.Lcsize))
 
-	case obj.Hlinux,
-		obj.Hfreebsd,
-		obj.Hnetbsd,
-		obj.Hopenbsd,
-		obj.Hnacl:
-		ld.Asmbelf(int64(symo))
+	case objabi.Hlinux,
+		objabi.Hfreebsd,
+		objabi.Hnetbsd,
+		objabi.Hopenbsd,
+		objabi.Hnacl:
+		ld.Asmbelf(ctxt, int64(symo))
 	}
 
-	ld.Cflush()
-	if ld.Debug['c'] != 0 {
+	ctxt.Out.Flush()
+	if *ld.FlagC {
 		fmt.Printf("textsize=%d\n", ld.Segtext.Filelen)
 		fmt.Printf("datsize=%d\n", ld.Segdata.Filelen)
 		fmt.Printf("bsssize=%d\n", ld.Segdata.Length-ld.Segdata.Filelen)

@@ -638,7 +638,7 @@ func (p *Parser) asmInstruction(op obj.As, cond string, a []obj.Addr) {
 			}
 		case sys.RISCV64:
 			prog.From = a[0]
-			prog.From3 = newAddr(a[1])
+			prog.SetFrom3(a[1])
 			prog.To = a[2]
 		case sys.S390X:
 			prog.From = a[0]

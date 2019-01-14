@@ -75,7 +75,7 @@ func archinit(ctxt *ld.Link) {
 		if ctxt.LinkMode == ld.LinkAuto {
 			ctxt.LinkMode = ld.LinkInternal
 		}
-		if ctxt.LinkMode == ld.LinkExternal && objapi.Getgoextlinkenabled() != "1" {
+		if ctxt.LinkMode == ld.LinkExternal && objabi.Getgoextlinkenabled() != "1" {
 			log.Fatalf("cannot use -linkmode=external with -H %s", ctxt.HeadType)
 		}
 	}
@@ -84,7 +84,7 @@ func archinit(ctxt *ld.Link) {
 	default:
 		ld.Exitf("unknown -H option: %v", ctxt.HeadType)
 
-	case objapi.Hlinux: /* riscv64 elf */
+	case objabi.Hlinux: /* riscv64 elf */
 		ld.Elfinit(ctxt)
 		ld.HEADR = ld.ELFRESERVE
 		if *ld.FlagTextAddr == -1 {

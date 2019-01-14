@@ -87,7 +87,9 @@ func Set(GOARCH string) *Arch {
 		a.LinkArch = &ppc64.Linkppc64le
 		return a
 	case "riscv64":
-		return archRiscv64()
+		a := archRiscv64()
+		a.LinkArch = &riscv64.Linkriscv64
+		return a
 	case "s390x":
 		a := archS390x()
 		a.LinkArch = &s390x.Links390x

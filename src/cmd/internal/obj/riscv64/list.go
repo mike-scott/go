@@ -35,7 +35,7 @@ import (
 
 var (
 	// Instructions is a map of instruction names to integer IDs.
-	Instructions = make(map[string]int)
+	Instructions = make(map[string]obj.As)
 
 	// Registers is a map of register names to integer IDs.
 	Registers = make(map[string]int16)

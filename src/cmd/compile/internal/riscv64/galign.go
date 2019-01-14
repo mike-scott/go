@@ -8,17 +8,17 @@ import (
 	"cmd/compile/internal/gc"
 	"cmd/compile/internal/ssa"
 	"cmd/internal/obj/riscv64"
-	"cmd/internal/objabi"
 )
 
 func Init(arch *gc.Arch) {
 	arch.LinkArch = &riscv64.Linkriscv64
-	arch.REGSP = riscv64.REGSP
+	arch.REGSP = riscv64.REG_SP
 	arch.MAXWIDTH = 1 << 50
 
-	arch.ZeroRange = zerorange
-	arch.ZeroAuto = zeroAuto
-	arch.Ginsnop = ginsnop
+// TODO (mscott) add later
+//	arch.ZeroRange = zerorange
+//	arch.ZeroAuto = zeroAuto
+//	arch.Ginsnop = ginsnop
 
 	arch.SSAMarkMoves = func(s *gc.SSAGenState, b *ssa.Block) {}
 	arch.SSAGenValue = ssaGenValue

@@ -2,7 +2,7 @@
 
 package ssa
 
-func rewriteValueRISCV64(v *Value, config *Config) bool {
+func rewriteValueRISCV64(v *Value) bool {
 	return false
 }
 

@@ -282,8 +282,8 @@ func NewConfig(arch string, types Types, ctxt *obj.Link, optimize bool) *Config 
 		c.LinkReg = linkRegMIPS64
 		c.hasGReg = true
 	case "riscv64":
-		c.IntSize = 8
 		c.PtrSize = 8
+		c.RegSize = 8
 		c.lowerBlock = rewriteBlockRISCV64
 		c.lowerValue = rewriteValueRISCV64
 	case "s390x":
